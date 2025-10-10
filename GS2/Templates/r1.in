@@ -1,0 +1,126 @@
+&kt_grids_knobs
+    grid_option = 'single'
+/
+
+&kt_grids_single_parameters
+    n0 = 3
+    rhostar_single = 0.004668742295700269
+    theta0 = 0.0
+/
+
+&theta_grid_parameters
+    ntheta = 128
+    nperiod = 2
+    rhoc = 0.32727272727272727
+    r_geo = 1.9560171365737915
+    rmaj = 2.0769104202116178
+    qinp = 2.4573055385933587
+    shift = -0.22831115463895346
+    akappa = 2.595545130100952
+    akappri = -0.171847094427763
+    tri = 0.14784555378239198
+    tripri = 1.5709823652468788
+/
+
+&theta_grid_knobs
+    equilibrium_option = 'eik'
+/
+
+&theta_grid_eik_knobs
+    bishop = 4
+    irho = 2
+    iflux = 0
+    local_eq = .true.
+    s_hat_input = 0.2660607875234582
+    beta_prime_input = -0.2804934863349486
+/
+
+&le_grids_knobs
+    npassing = 7
+    negrid = 10
+/
+
+&dist_fn_knobs
+    adiabatic_option = 'iphi00=2'
+    opt_source = .false.
+/
+
+&fields_knobs
+    field_option = 'implicit'
+/
+
+&knobs
+    fphi = 1.0
+    fapar = 1.0
+    fbpar = 1.0
+    delt = 0.1
+    nstep = 10000
+    avail_cpu_time = 7200
+    seed = 100
+    beta = 0.1545501336782672
+/
+
+&layouts_knobs
+    layout = 'xyles'
+/
+
+&collisions_knobs
+    collision_model = 'default'
+/
+
+&species_knobs
+    nspec = 2
+/
+
+&init_g_knobs
+    ginit_option = 'random_sine'
+    chop_side = .false.
+    phiinit = 1e-05
+/
+
+&gs2_diagnostics_knobs
+    write_ascii = .false.
+    write_omega = .true.
+    write_final_fields = .true.
+    nwrite = 100
+    navg = 100
+    omegatol = 1e-06
+    omegatinst = 500.0
+    nsave = 50000
+    save_for_restart = .false.
+    write_fluxes = .true.
+    write_fields = .false.
+    write_moments = .false.
+/
+
+&species_parameters_1
+    mass = 0.0002723085105
+    z = -1.0
+    dens = 1.0
+    temp = 0.9781813493508954
+    fprim = -0.19845570222415057
+    tprim = 0.9250000088807746
+    vnewk = 0.013839793096213072
+    type = 'electron'
+/
+
+&dist_fn_species_knobs_1
+    fexpr = 0.48
+    bakdif = 0.05
+/
+
+&species_parameters_2
+    mass = 1.0
+    z = 1.0
+    dens = 1.0
+    temp = 1.0
+    fprim = -0.19845570222415057
+    tprim = 0.9282528709732024
+    vnewk = 0.00026521735418932283
+    type = 'ion'
+/
+
+&dist_fn_species_knobs_2
+    fexpr = 0.48
+    bakdif = 0.05
+/
