@@ -2,6 +2,7 @@
 import os
 import sys
 import torch
+import copy
 import subprocess
 from pathlib import Path
 from pyrokinetics import Pyro, PyroScan
@@ -10,7 +11,7 @@ import numpy as np
 
 
 REPO_ROOT = Path(__file__).resolve().parent   # repo root if this file sits at repo root
-STEP_DATA_DIR = "/home/Felix/Documents/Physics_Work/Project_Codes/GP_Model_Eval/GS2/Templates"
+STEP_DATA_DIR = "/users/hmq514/scratch/GP_Model_Eval/GS2/Templates"
 STEP_CASE = "SPR-008"
 
 TGLF_BINARY_PATH = os.path.expandvars("/users/hmq514/scratch/TGLF/gacode/tglf/src/tglf")
@@ -36,20 +37,49 @@ def Read_from_gs2():
 
     # Use existing parameter with more realistic ky range
     param_1 = "ky" 
-    values_1 = np.arange(0.1, 1, 0.2)/pyro.norms.pyrokinetics.rhoref
+    values_1 = np.arange(0.1, 1, 0.1)/pyro.norms.pyrokinetics.rhoref
     # Add rho parameter with realistic values
     param_2 = "rho"
-    values_2 = np.arange(0.01, 1, 0.5)*(pyro.norms.pyrokinetics.lref)
+    values_2 = np.arange(0.1, 1, 0.1)*(pyro.norms.pyrokinetics.lref)
     
     # Dictionary of param and values
     param_dict = {param_1: values_1, param_2: values_2}
 
+
+    pyro_scan_gs2 = PyroScan(
+        pyro,
+        param_dict,
+        value_fmt=".4f",  # Increased precision for small beta values
+        value_separator="_",
+        parameter_separator="_",
+    )
+
+    # Add proper parameter mapping for beta
+    pyro_scan_gs2.add_parameter_key(
+        parameter_key="rho",
+        parameter_attr="local_geometry", 
+        parameter_location=["rho"]
+    )
+
+
+    # Create scan directory and write input files
+    try:
+        pyro_scan_gs2.write(
+            file_name="gs2.in",
+            base_directory=REPO_ROOT / "parameter_scan_exb",
+            template_file=None
+        )
+    except Exception as e:
+        print(f"Error writing parameter scan files: {e}")
+        return None
+    
+    pyro_copy = copy.copy(pyro)
     # Switch to TGLF
-    pyro.gk_code = "TGLF"
+    pyro_copy.gk_code = "TGLF"
 
      # Create PyroScan object with more descriptive naming
     pyro_scan_tglf = PyroScan(
-        pyro,
+        pyro_copy,
         param_dict,
         value_fmt=".4f",  # Increased precision for small rho values
         value_separator="_",
@@ -67,14 +97,14 @@ def Read_from_gs2():
     #try:
     pyro_scan_tglf.write(
         file_name="input.tglf",
-        base_directory=REPO_ROOT / "parameter_scan_exb_tglf",
+        base_directory=REPO_ROOT / "parameter_scan_exb",
         template_file=None
     )
     # except Exception as e:
     #     print(f"Error writing parameter scan files: {e}")
     #     return None
 
-    return pyro_scan_tglf
+    return pyro_scan_tglf, pyro_scan_gs2
 
 def run_file_full(sim_dir):
     # Make sure the directory exists
@@ -92,6 +122,82 @@ def run_file_full(sim_dir):
 def run_sim(pyro_scan):
     for run_dir in pyro_scan.run_directories:
         run_file_full(run_dir)
+
+
+import os
+import subprocess
+from pathlib import Path
+import textwrap
+
+def run_gs2_simulations_viking(pyro_scan):
+
+    for run_dir in pyro_scan.run_directories:
+        run_dir = Path(run_dir)
+        job_name = f"gs2_{run_dir.name}"
+        print(run_dir)
+        EXE = "/users/hmq514/scratch/gs2/bin/gs2"
+        slurm_script = textwrap.dedent(f"""#!/usr/bin/env bash
+#SBATCH --job-name={job_name}            # Job name
+#SBATCH --partition=nodes               # What partition the job should run on
+#SBATCH --time=0-32:00:00               # Time limit (DD-HH:MM:SS)
+#SBATCH --ntasks=96                      # Number of MPI tasks to request
+#SBATCH --cpus-per-task=1               # Number of CPU cores per MPI task
+#SBATCH --exclusive                     # tries to take the core exclusively
+#SBATCH --account=pet-gspt-2019         # Project account to use
+#SBATCH --mail-type=END,FAIL            # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=hmq514@york.ac.uk   # Where to send mail
+#SBATCH --output={job_name}-%j.log              # Standard output log
+#SBATCH --error={job_name}-%j.err              # Standard error log
+
+# Purge any previously loaded modules
+module purge
+
+# Load modules
+module load gompi/2022b OpenMPI/4.1.4-GCC-12.2.0 netCDF-Fortran/4.6.0-gompi-2022b FFTW/3.3.10-GCC-12.2.0 OpenBLAS/0.3.21-GCC-12.2.0 Python/3.10.8-GCCcore-12.2.0
+
+# Commands to run. 
+
+export GK_SYSTEM='viking'
+export MAKEFLAGS='-IMakefiles'
+export HDF5_USE_FILE_LOCKING=FALSE
+
+ulimit -s unlimited
+
+######################## Above is in bashrc anyway
+
+export OMP_NUM_THREADS=1
+INPUT_DIR=$(dirname "{run_dir}")  # Extract directory of input file
+srun --hint=nomultithread --distribution=block:block -n 96 {EXE} {run_dir}/gs2.in | tee OUTPUT
+        """)
+
+        # Write the Slurm script to the run directory
+        script_path = run_dir / "jobscript.job"
+        script_path.write_text(slurm_script)
+
+        # Submit with sbatch
+        print(f"Submitting job for {run_dir}...")
+        result = subprocess.run(["sbatch", str(script_path)], capture_output=True, text=True, check=True)
+
+        # Extract job ID from sbatch output
+        print(result.stdout.strip())
+
+
+
+def run_gs2_simulations_Local(pyro_scan):
+
+    GS2_EXE = "/home/Felix/Documents/Physics_Work/Project_Codes/GS2_TGLF/gs2/bin/gs2"
+
+    for run_dir in pyro_scan.run_directories:
+        run_dir = Path(run_dir)
+        job_name = f"gs2_{run_dir.name}"
+        print(run_dir)
+        cmd = [
+        "mpirun", "-n", "4",
+        GS2_EXE,
+        run_dir / "gs2.in"
+        ]
+        # Run and wait for it to finish
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
 
 
@@ -254,6 +360,8 @@ def load_results(pyro_scan_tglf):
     plt.close(fig)
 
 if __name__ == "__main__":
-    pyro_scan_tglf = Read_from_gs2()
+    print(Read_from_gs2())
+    pyro_scan_tglf,pyro_scan_gs2 = Read_from_gs2()
+    run_gs2_simulations_viking(pyro_scan_gs2)
     run_sim(pyro_scan_tglf)
     load_results(pyro_scan_tglf)
