@@ -109,6 +109,8 @@ def load_results(pyro_scan_tglf):
     pyro_scan_tglf.load_gk_output()
 
     data_tglf = pyro_scan_tglf.gk_output
+    print(data_tglf)
+    exit()
     growth_rate_tglf = data_tglf['growth_rate']
     print(growth_rate_tglf)
     print("tglf data")
@@ -264,5 +266,5 @@ def load_results(pyro_scan_tglf):
 
 if __name__ == "__main__":
     pyro_scan_tglf = Read_from_gs2()
-    run_sim(pyro_scan_tglf)
+    #run_sim(pyro_scan_tglf)
     load_results(pyro_scan_tglf)
