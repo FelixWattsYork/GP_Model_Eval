@@ -36,7 +36,7 @@ def Read_from_gs2():
 
     # Use existing parameter with more realistic ky range
     param_1 = "ky" 
-    values_1 = np.arange(0.1, 1, 0.1)/pyro.norms.pyrokinetics.rhoref
+    values_1 = np.arange(0.1, 1, 0.2)/pyro.norms.pyrokinetics.rhoref
     # Add beta parameter with realistic values
     param_2 = "beta"
     values_2 = np.arange(0.01, 0.20, 0.01)*pyro.norms.pyrokinetics.beta_ref
@@ -150,10 +150,10 @@ def load_results(pyro_scan_tglf):
         axes[i, 1] = ax2
 
         # Plot data
-        ax1.plot(growth_rate_tglf.ky, growth_rate_tglf.sel(beta=beta).sel(mode=0), label=rf"tglf_$\beta={beta:.3f}$")
-        ax1.plot(growth_rate_gs2_gp.ky, growth_rate_gs2_gp.sel(beta=beta,output="value"), label=rf"GS2_$\beta={beta:.3f}$")
-        ax2.plot(mode_frequency_tglf.ky, mode_frequency_tglf.sel(beta=beta).sel(mode=0), label=rf"tglf_$\beta={beta:.3f}$")
-        ax2.plot(mode_frequency_gs2_gp.ky, mode_frequency_gs2_gp.sel(beta=beta,output="value"), label=rf"GS2_$\beta={beta:.3f}$")
+        ax1.plot(growth_rate_tglf.ky, growth_rate_tglf.sel(beta=beta).sel(mode=0), label=rf"tglf")
+        ax1.plot(growth_rate_gs2_gp.ky, growth_rate_gs2_gp.sel(beta=beta,output="value"), label=rf"GS2_GP")
+        ax2.plot(mode_frequency_tglf.ky, mode_frequency_tglf.sel(beta=beta).sel(mode=0), label=rf"tglf")
+        ax2.plot(mode_frequency_gs2_gp.ky, mode_frequency_gs2_gp.sel(beta=beta,output="value"), label=rf"GS2_GP")
 
         # Axis labels
         ax1.set_ylabel(r'$\gamma (c_{s}/a)$')
@@ -223,10 +223,10 @@ def load_results(pyro_scan_tglf):
         axes[i, 1] = ax2
 
         # Plot data
-        ax1.plot(growth_rate_tglf.beta, growth_rate_tglf.sel(ky=ky).sel(mode=0), label=rf"tglf_$k_y={ky:.2f}$")
-        ax1.plot(growth_rate_gs2_gp.beta, growth_rate_gs2_gp.sel(ky=ky,output="value"), label=rf"gs2_$k_y={ky:.2f}$")
-        ax2.plot(mode_frequency_tglf.beta, mode_frequency_tglf.sel(ky=ky).sel(mode=0), label=rf"tglf_$k_y={ky:.2f}$")
-        ax2.plot(mode_frequency_gs2_gp.beta, mode_frequency_gs2_gp.sel(ky=ky,output="value"), label=rf"gs2_$k_y={ky:.2f}$")
+        ax1.plot(growth_rate_tglf.beta, growth_rate_tglf.sel(ky=ky).sel(mode=0), label=rf"tglf")
+        ax1.plot(growth_rate_gs2_gp.beta, growth_rate_gs2_gp.sel(ky=ky,output="value"), label=rf"GS2_GP")
+        ax2.plot(mode_frequency_tglf.beta, mode_frequency_tglf.sel(ky=ky).sel(mode=0), label=rf"tglf")
+        ax2.plot(mode_frequency_gs2_gp.beta, mode_frequency_gs2_gp.sel(ky=ky,output="value"), label=rf"GS2_GP")
 
         # Axis labels
         ax1.set_ylabel(r'$\gamma (c_{s}/a)$')
@@ -264,5 +264,5 @@ def load_results(pyro_scan_tglf):
 
 if __name__ == "__main__":
     pyro_scan_tglf = Read_from_gs2()
-    #run_sim(pyro_scan_tglf)
+    run_sim(pyro_scan_tglf)
     load_results(pyro_scan_tglf)
